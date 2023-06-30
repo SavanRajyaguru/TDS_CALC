@@ -38,39 +38,39 @@ const tdsEntryController = async (req, res) => {
         const calculateTDS = await tdsCalc(res, iUserId, nAmount)
         console.log('>>>>>>>', calculateTDS)
         console.log(calculateTDS.ans > 0,'$$$$$$$$$')
-        return messaging(res, statuscode.statusSuccess, `TDS is ${calculateTDS.ans}`)
-        // if(calculateTDS.ans > 0){
-        //     //* transaction option
-        //     const transactionOption = {
-        //         readPreference: 'primary',
-        //         readConcern: { level: 'majority' },
-        //         writeConcern: { w: 'majority' }
-        //     }
-        //     //* start transaction
-        //     session.startTransaction(transactionOption)
+        // return messaging(res, statuscode.statusSuccess, `TDS is ${calculateTDS.ans}`)
+        if(calculateTDS.ans > 0){
+            //* transaction option
+            const transactionOption = {
+                readPreference: 'primary',
+                readConcern: { level: 'majority' },
+                writeConcern: { w: 'majority' }
+            }
+            //* start transaction
+            session.startTransaction(transactionOption)
             
-        //     //* Make Entry of Tds after calculating Taxable Amount
-        //     await tdsEntry(res, iUserId, calculateTDS.ans, nAmount-calculateTDS.ans, session)
+            //* Make Entry of Tds after calculating Taxable Amount
+            await tdsEntry(res, iUserId, calculateTDS.ans, nAmount-calculateTDS.ans, session)
             
-        //     //* Make Withdraw entry after deducting Tds from requested amount
-        //     await withdrawEntry(iUserId, nAmount, session)
+            //* Make Withdraw entry after deducting Tds from requested amount
+            await withdrawEntry(iUserId, nAmount, session)
 
-        //     //* Make Passbook entry
-        //     //! update
-        //     await passbookEntry(res, iUserId, nAmount, 'Withdraw', session)
+            //* Make Passbook entry
+            //! update
+            await passbookEntry(res, iUserId, nAmount, 'Withdraw', session)
 
-        //     //* Make Passbook enteries for the same
-        //     await passbookEntry(res, iUserId, calculateTDS.ans, 'TDS', session)
+            //* Make Passbook enteries for the same
+            await passbookEntry(res, iUserId, calculateTDS.ans, 'TDS', session)
 
-        //     //* commit transaction
-        //     await session.commitTransaction()
-        //     return messaging(res, statuscode.statusSuccess, `TDS is ${calculateTDS.ans}`)
-        // } else {
-        //     //* Make Withdraw entry after deducting Tds from requested amount
-        //     await withdrawEntry(iUserId, nAmount, session)
+            //* commit transaction
+            await session.commitTransaction()
+            return messaging(res, statuscode.statusSuccess, `TDS is ${calculateTDS.ans}`)
+        } else {
+            //* Make Withdraw entry after deducting Tds from requested amount
+            await withdrawEntry(iUserId, nAmount, session)
 
-        //     return messaging(res, statuscode.statusSuccess, 'TDS not cut')
-        // }
+            return messaging(res, statuscode.statusSuccess, 'TDS not cut')
+        }
     } catch (error) {
         console.log(error)
         await session.abortTransaction()
